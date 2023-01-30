@@ -17,10 +17,6 @@ using System.Windows.Shapes;
 
 namespace formular_zamestnanec_wpf
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    /// 
     public class Person
     {
         protected string name, surname;
@@ -31,6 +27,7 @@ namespace formular_zamestnanec_wpf
 
     public class Employee : Person, INotifyPropertyChanged
     {
+        public Guid _ID { get; set; }
         string work, money;
         public string School
         {
@@ -208,7 +205,7 @@ namespace formular_zamestnanec_wpf
                 int moneyNum;
                 if (value.Length <= 0)
                 {
-                    money = string.Empty;
+                    money = value;
                     WarningMoney = Visibility.Visible;
                 }
                 else if (int.TryParse(value, out moneyNum))
@@ -283,7 +280,7 @@ namespace formular_zamestnanec_wpf
 
         public override string ToString()
         {
-            return $"{Name}|{Surname}|{DateOfBirth}|{Topschool()}|{Work}|{Money}@";
+            return $"Jméno: " + Name + " Příjmení: " + Surname + " Narození: " + DateOfBirth + " Vzdělání: " + Topschool() + " Práce: " + Work + " Příjem: " + Money;
         }
 
         private void OnPropertyChanged(string property)
@@ -294,7 +291,7 @@ namespace formular_zamestnanec_wpf
 
         public static Employee EmployeeCopy(Employee employee)
         {
-            Employee newEmployee = new Employee() { Name = employee.Name, surname = employee.Surname, DateOfBirth = employee.DateOfBirth, School = employee.School, Work = employee.Work, Money = employee.Money };
+            Employee newEmployee = new Employee() { Name = employee.Name, surname = employee.Surname, DateOfBirth = employee.DateOfBirth, School = employee.School, Work = employee.Work, Money = employee.Money, _ID = Guid.NewGuid() };           
             return newEmployee;
         }
 
@@ -302,6 +299,7 @@ namespace formular_zamestnanec_wpf
     public partial class MainWindow : Window
     {
         Employee employee;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -316,7 +314,6 @@ namespace formular_zamestnanec_wpf
                WarningWork = Visibility.Hidden,
                WarningMoney = Visibility.Hidden,
                ElementarySchool = true
-
            };
         }
 
@@ -326,7 +323,19 @@ namespace formular_zamestnanec_wpf
             if (employee.Name != null && employee.Surname != null && employee.Money != null && employee.Work != null)
             {
 
-                Employee.AllEmployes.Add(Employee.EmployeeCopy(employee));
+                Employee q = Employee.AllEmployes.Find(t => t._ID == employee._ID);
+                int qIndex = Employee.AllEmployes.IndexOf(q);
+
+                if (q != null)
+                {
+                    Employee.AllEmployes[qIndex] = Employee.EmployeeCopy(employee);
+                }
+                else
+                {
+                    Employee.AllEmployes.Add(Employee.EmployeeCopy(employee));
+                    Cleardata();
+                }
+
                 lv.ItemsSource = null;
                 lv.ItemsSource = Employee.AllEmployes;
 
@@ -363,20 +372,32 @@ namespace formular_zamestnanec_wpf
 
         public void Cleardata()
         {
-            employee.Name = employee.Surname = employee.Money = employee.Work = " ";
+            employee.Name = employee.Surname  = employee.Work = " ";
+            employee.Money = "0";
             employee.DateOfBirth = DateTime.Now.ToString();
             employee.ElementarySchool = employee.MiddleSchool = employee.HighSchool = false;
-            employee.WarningName = Visibility.Hidden;
-            employee.WarningSurname = Visibility.Hidden;
-            employee.WarningDateOfBirth = Visibility.Hidden;
-            employee.WarningSchool = Visibility.Hidden;
-            employee.WarningWork = Visibility.Hidden;
-            employee.WarningMoney = Visibility.Hidden;
         }
 
         private void btClear_Click(object sender, RoutedEventArgs e)
         {
             Cleardata();
+        }
+
+        private void deleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            Employee toDelete = ((Button)sender).DataContext as Employee;
+            Employee.AllEmployes.Remove(toDelete);
+
+            lv.ItemsSource = null;
+            lv.ItemsSource = Employee.AllEmployes;
+        }
+
+        private void editButton_Click(object sender, RoutedEventArgs e)
+        {
+            employee.Name = (((Button)sender).DataContext as Employee).Name;
+            employee.Surname = (((Button)sender).DataContext as Employee).Surname;
+            employee.DateOfBirth = (((Button)sender).DataContext as Employee).DateOfBirth;
+            employee._ID = (((Button)sender).DataContext as Employee)._ID;
         }
     }
 }
